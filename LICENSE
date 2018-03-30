@@ -1,5 +1,5 @@
 This repository is licensed under the MIT license below. It uses the pseudo-random
-number generator libray "dranxor" from Raul Toral, which can be found in the 
+number generator libray "dranxor" written by Raul Toral, which can be found in the 
 following link:
 https://ifisc.uib-csic.es/users/raul/CURSOS/Stochastic_Simulation_Methods/dranxor.f90
 
