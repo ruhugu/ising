@@ -1,4 +1,5 @@
-This repository is licensed under the MIT license below. It uses the pseudo-random number generator libray "dranxor" from Raul Toral, which can be found (here)[https://ifisc.uib-csic.es/users/raul/CURSOS/Stochastic_Simulation_Methods/dranxor.f90].
+This repository is licensed under the MIT license below. It uses the pseudo-random
+number generator libray "dranxor" from Raul Toral, which can be found (here)[https://ifisc.uib-csic.es/users/raul/CURSOS/Stochastic_Simulation_Methods/dranxor.f90].
 
 
 MIT License
