@@ -119,6 +119,39 @@ class Ising(object):
         return
 
 
+    # TODO: improve docs
+    def slow_thermalization(self, T_final, T_ini=4., steps_per_T=1000,
+                            n_T=0.1):
+        """Thermalize the system slowly to the given temperature.
+
+        Parameters
+        ----------
+            T_final : float
+                Final temperature.
+
+            T_ini : float
+                Initial temperature in the thermalization process.
+                
+            steps_per_T : int
+                Number of time steps per temperature.
+
+            T_step : float
+                Difference between consecutive temperature steps.
+
+            n_T : int
+                NUmber of temperatures.
+
+        """
+        # Create the temperature vector
+        Ts = np.linspace(T_ini, T_final, n_T)
+
+        # Temperature loop
+        for T in Ts:
+            self.evolve(steps_per_T, T)
+
+        return
+
+
     def magnetization(self):
         """Calculate the instantaneous mean magnetization.
 
@@ -171,8 +204,8 @@ class Ising(object):
         cbar = fig.colorbar(im, ax=ax)
 
         anim = animation.FuncAnimation(fig, update, frames=nframes, 
-                                       blit=False, fargs=(T, steps_per_frame,
-                                       im, self))
+                                       blit=False, interval=frame_interval,
+                                       fargs=(T, steps_per_frame, im, self))
         return anim
 
       
