@@ -121,7 +121,7 @@ class Ising(object):
 
     # TODO: improve docs
     def slow_thermalization(self, T_final, T_ini=4., steps_per_T=1000,
-                            n_T=0.1):
+                            n_T=30):
         """Thermalize the system slowly to the given temperature.
 
         Parameters
