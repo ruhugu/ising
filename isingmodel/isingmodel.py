@@ -103,6 +103,11 @@ class Ising(object):
                    of the Boltzmann's constant times the coupling
                    constant times the particle's spin squared.
 
+            Returns
+            -------
+                naccept : int
+                    Number of accepted proposals.
+
         """
         # Raise an error if the given temperature is not valid
         if T <= 0:
@@ -113,15 +118,15 @@ class Ising(object):
         beta = 1./T
 
         # Call the time evolution C function
-        self.spins = cevolve.evolve_nofieldGlauber(
+        self.spins, naccept = cevolve.evolve_nofieldGlauber(
                 self.spins, self.neighlist, beta, nsteps)
 
-        return
+        return naccept
 
 
     # TODO: improve docs
     def slow_thermalization(self, T_final, T_ini=4., steps_per_T=1000,
-                            n_T=30):
+            n_T=30):
         """Thermalize the system slowly to the given temperature.
 
         Parameters
@@ -131,7 +136,7 @@ class Ising(object):
 
             T_ini : float
                 Initial temperature in the thermalization process.
-                
+
             steps_per_T : int
                 Number of time steps per temperature.
 
@@ -159,6 +164,9 @@ class Ising(object):
         return np.mean(self.spins)
 
 
+    # Graphical respresentation
+    # ========================================
+
     def plot(self, size=3):
         """Plot the system configuration. 
 
@@ -166,7 +174,7 @@ class Ising(object):
 
         fig, ax = plt.subplots(figsize=(size,size))
         im = ax.imshow(self.latt, cmap=self.cmap, vmin=-1, vmax=+1,
-                       interpolation=None)
+                interpolation=None)
         return fig
 
 
@@ -200,20 +208,60 @@ class Ising(object):
 
         fig, ax = plt.subplots()
         im = ax.imshow(self.latt, cmap="Greys", vmin=-1, 
-                    vmax=+1, interpolation=None)
+                vmax=+1, interpolation=None)
         cbar = fig.colorbar(im, ax=ax)
 
         anim = animation.FuncAnimation(fig, update, frames=nframes, 
-                                       blit=False, interval=frame_interval,
-                                       fargs=(T, steps_per_frame, im, self))
+                blit=False, interval=frame_interval,
+                fargs=(T, steps_per_frame, im, self))
         return anim
 
-      
+
+    # I/O
+    # ========================================
+
+    def saveconf(self, fname=None):
+        """Save spin configuration of the system to a text file.
+
+        Parameters
+        ----------
+            fname : string
+                Name of the output file. Defaults to spinconfN@.dat
+                with @ the number of spins in the lattice.
+
+        """
+        if fname == None:
+            fname = "spinconfN{0}.dat".format(self.nspins)
+
+        np.savetxt(filename, latt.spins, fmt="%d")
+        return
+
+    def loadconf(self, fname):
+        """Load spin configuration of the system from a text file.
+
+        Parameters
+        ----------
+            fname : string
+                Name of the input file. 
+
+        """
+        inconf = np.loadtxt(filename).astype("intc")
+
+        # If the number of spins does not match the number of
+        # spins in the lattice, return an error
+        if inconf.size != self.nspins:
+            raise ValueError(
+                    "The number of spins in the input file does not match the "
+                    "number of spins in the lattice.")
+
+        latt.spins = inconf
+        return
+
+
 class Ising2D(Ising):
     """2D Ising model lattice with periodic boundary conditions.
 
     """
-
     def __init__(self, ncols, nrows, seed=None):
         # Store parameters
         self.ncols = ncols
@@ -282,3 +330,45 @@ class Ising2D(Ising):
                     [row, col-1], self.shape(), mode="wrap") # Left neighbour
             
         return neighlist, nneigh
+
+
+    # Exact results
+    # ========================================
+
+    # Critical temperature
+    Tcrit = 2.26918531421
+    
+    @classmethod
+    def magnetization_exact(cls, T):
+        """Return the expected magnetization using the exact solution.
+
+        Parameters
+        ----------
+            T : float (or float array)
+                Temperature.
+
+        Returns
+        -------
+            mag : float
+                Magnetization.
+
+        """
+        # Convert T to a numpy array
+        # TODO: there must be a cleaner way to do this
+        T_arr = T*np.ones(1)
+
+        # Create array to store the solution
+        mag = np.zeros(T_arr.size, dtype=float)
+
+        # Find the indexes of the temperatures below the critical one
+        undercrit_idxs = np.argwhere(T_arr < cls.Tcrit)
+        # Calculate the magnetization for the undercritical temperatures
+        beta = 1./T_arr[undercrit_idxs]
+        aux = np.power(np.sinh(2.*beta), -4)
+        mag[undercrit_idxs] = np.power(1. - aux, 1./8.)
+
+        # If there is only one temperature, convert the array to a scalar
+        if T_arr.size == 1:
+            mag = np.asscalar(mag)
+
+        return mag
