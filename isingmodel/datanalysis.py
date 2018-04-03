@@ -143,6 +143,13 @@ class Results(object):
         return self.samplemean_error(
                 self.mags, self.mag2s, self.acceptprobs, self.nmeasures)
 
+    def magsuscept(self):
+        """Calculate the magnetic susceptibility.
+
+        """
+        Ts_arr = np.array(self.Ts)
+        return self.nspins/Ts_arr*variance(mean, momnt2)
+
     def binderratio(self):
         """Calculate the Binder ratio or fourth order cumulant.
 
@@ -172,6 +179,25 @@ class Results(object):
         momnt2_arr = np.array(momnt2)
         return momnt2_arr - np.power(mean, 2)
 
+    @classmethod
+    def samplevariance(cls, mean, momnt2, nmeasure):
+        """Calculate the sample variance.
+
+        Parameters
+        ----------
+            mean : float (scalar or array)
+                Mean value. 
+
+            momnt2 : float (scalar or array)
+                Second raw moment (mean of the square).
+
+        Returns
+        -------
+            variance : float (scalar or array)
+
+        """
+        nmeasure_arr = np.array(nmeasure)
+        return nmeasure_arr/(nmeasure_arr - 1)*cls.variance(mean, momnt2)
 
 
     # TODO: improve docs
