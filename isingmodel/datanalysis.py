@@ -143,10 +143,10 @@ class Results(object):
                 self.mags, self.mag2s, self.acceptprobs, self.nmeasures)
 
     def binderratio(self):
-        """Calculate the Binder ratio or fprth order cumulant.
+        """Calculate the Binder ratio or fourth order cumulant.
 
         """
-        return (1. - self.mag4/(3.*np.powrt(self.mag2, 2)))
+        return (1. - self.mag4s/(3.*np.power(self.mag2s, 2)))
 
     
     # Statistical functions
