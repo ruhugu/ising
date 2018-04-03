@@ -125,8 +125,8 @@ class Ising(object):
 
 
     # TODO: improve docs
-    def slow_thermalization(self, T_final, T_ini=4., steps_per_T=1000,
-            n_T=30):
+    def slow_thermalization(self, T_final, T_ini=4., T_step=0.1,
+                            steps_per_T=1000):
         """Thermalize the system slowly to the given temperature.
 
         Parameters
@@ -137,18 +137,18 @@ class Ising(object):
             T_ini : float
                 Initial temperature in the thermalization process.
 
+            T_step : float
+                Difference between consecutive temperatures.
+
             steps_per_T : int
                 Number of time steps per temperature.
 
             T_step : float
                 Difference between consecutive temperature steps.
 
-            n_T : int
-                NUmber of temperatures.
-
         """
         # Create the temperature vector
-        Ts = np.linspace(T_ini, T_final, n_T)
+        Ts = np.arange(T_ini, T_final, T_step)
 
         # Temperature loop
         for T in Ts:
