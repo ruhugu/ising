@@ -24,9 +24,14 @@ class Results(object):
             self.corrs = list()
             self.acceptprobs = list()
             self.nmeasures = list()
-            self.measureinterval = list()
+            self.measureintervals = list()
 
+        # Calculate the numer of spins
+        self.nspins = np.prod(self.shape)
 
+    # TODO: complete docs
+    # TODO: check if T has been already measured and average
+    # with the previous data in that case
     def measure(self, T, nmeasures, latt, measureinterval=1):
         """Measure blablbalba
 
@@ -39,7 +44,7 @@ class Results(object):
         # Store parameters
         self.Ts.append(T)
         self.nmeasures.append(nmeasures)
-        self.measureinterval.append(measureinterval)
+        self.measureintervals.append(measureinterval)
 
         # Initialize variables
         mag_last = 0. # Magnetization in the last measure
@@ -124,7 +129,7 @@ class Results(object):
                 np.vstack((
                         self.Ts, self.mags, self.mag2s, self.mag4s,
                         self.corrs, self.acceptprobs, self.nmeasures, 
-                        self.measureinterval)).T,
+                        self.measureintervals)).T,
                 header=headerstring, footer=footerstring)
         return
 
@@ -164,7 +169,9 @@ class Results(object):
             variance : float (scalar or array)
 
         """
-        return momnt2 - np.power(mean, 2)
+        momnt2_arr = np.array(momnt2)
+        return momnt2_arr - np.power(mean, 2)
+
 
 
     # TODO: improve docs
