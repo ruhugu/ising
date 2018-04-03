@@ -4,10 +4,6 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 
 
-# TODO: the data is stored in lists or arrays depending on how it 
-# was obtained: list if it was measured and array if it was read.
-# Fix this.
-
 class Results(object):
     def __init__(self, shape=None, fname=None):
 
@@ -88,14 +84,14 @@ class Results(object):
         """
         filedata = np.loadtxt(filename).T
 
-        self.Ts = filedata[0]
-        self.mags = filedata[1]
-        self.mag2s = filedata[2]
-        self.mag4s = filedata[3]
-        self.corrs = filedata[4]
-        self.acceptprobs = filedata[5]
-        self.nmeasures = filedata[6]
-        self.measureintervals = filedata[7]
+        self.Ts = filedata[0].tolist()
+        self.mags = filedata[1].tolist()
+        self.mag2s = filedata[2].tolist()
+        self.mag4s = filedata[3].tolist()
+        self.corrs = filedata[4].tolist()
+        self.acceptprobs = filedata[5].tolist()
+        self.nmeasures = filedata[6].tolist()
+        self.measureintervals = filedata[7].tolist()
 
         # Read additional parameters from footer
         with open(filename, "r") as f:
