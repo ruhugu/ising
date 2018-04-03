@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-/* void c_evolve_nofieldGlauber
+/* int c_evolve_nofieldGlauber
 Evolves the system with in the given number of Monte Carlo steps.
 
 The system is a 2D lattice with no external field and Glauber's 
@@ -38,8 +38,13 @@ Parameters
     nsteps : long int
         Number of steps to evolve the system.
 
+Returns
+-------
+    naccept : long int
+        Number of accepted proposals.
+
 */
-void c_evolve_nofieldGlauber(
+int c_evolve_nofieldGlauber(
         int* spins_in, int* spins_out, int *neigh_list, int nspins,
         int nneigh, double beta, long int nsteps);
 

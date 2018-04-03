@@ -1,6 +1,6 @@
 #include "c_evolve.h"
 
-void c_evolve_nofieldGlauber(
+int c_evolve_nofieldGlauber(
         int* spins_in, int* spins_out, int *neigh_list, int nspins,
         int nneigh, double beta, long int nsteps)
 {
@@ -9,7 +9,12 @@ void c_evolve_nofieldGlauber(
     int j_neigh; // Counter for the neighbors loop
     int j_spin;
     int acceptprob_idx;
+    long int naccept;
     double acceptprob[5];
+
+
+    // Initialize the number of accepted proposals to zero
+    naccept = 0;
 
     // Precalculate the values of the Glauber acceptance 
     // probability for the possible energy differences.
@@ -52,11 +57,12 @@ void c_evolve_nofieldGlauber(
             if (dranu_() < acceptprob[acceptprob_idx])
             {
                 spins_out[j_spin] *= -1;
+                naccept += 1;
             }
         }
     }
             
-    return;
+    return naccept;
 }
 
 

@@ -31,7 +31,7 @@ import numpy as np
 # cdef extern especifies that the function is defined elsewhere.
 # http://cython-docs2.readthedocs.io/en/latest/src/userguide/external_C_code.html
 cdef extern from "c_evolve.h":
-    void c_evolve_nofieldGlauber(
+    int c_evolve_nofieldGlauber(
             int* spins_in, int* spins_out, int *neighlist, int nspins,
             int nneigh, double beta, long int nsteps)
 
@@ -73,14 +73,14 @@ def evolve_nofieldGlauber(
         cdef cnp.ndarray[int, ndim=1, mode="c"] spins_out = \
                 np.zeros(nspins, dtype="intc")
 
-        c_evolve_nofieldGlauber(
+        naccept = c_evolve_nofieldGlauber(
                 <int*> cnp.PyArray_DATA(spins_in),
                 <int*> cnp.PyArray_DATA(spins_out),
                 <int*> cnp.PyArray_DATA(neighlist.flatten()),
                 nspins, nneigh,
                 beta, nsteps)
 
-        return spins_out
+        return spins_out, naccept
 
 
 def seed(int iseed): 
