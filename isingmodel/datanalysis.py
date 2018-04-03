@@ -251,3 +251,82 @@ class Results(object):
 
         return error
 
+# TODO: make the function check and treat properly measures with 
+# the same T but different measure intervals
+def mergeresults(results_list):
+    """Merge several results objects into one.
+
+    Be careful: right now the function does not treat properly 
+    measures with the same temperature but different 
+    measure intervals.
+
+    Parameters
+    ----------
+        results_list : isingmodel.Results list
+            List with the Results objects to be merged. All the 
+            Results objects in the list bust have the same shape.
+            in the list must have the 
+
+    Returns
+    -------
+        merged: :py:class:`isingmodel.Results` object
+            Results object with all the data from results list.
+    """
+    # Check that all the list elements have the same shape
+    shape = results_list[0].shape
+    for results in results_list:
+        if results.shape != shape:
+            raise ValueError(
+                    "All the elements in the list must have the same shape")
+
+    # Create the object where all the data will be stored
+    merged = Results(shape=shape)
+
+    # Loop over the results objects
+    for results in results_list:
+        # Loop over the measured temperatures
+        for T_idx, T in enumerate(results.Ts):
+            # If T is already in merged, average the results
+            if T in merged.Ts:
+                idx = merged.Ts.index(T) 
+
+                merged.mags[idx] = np.average(
+                        [merged.mags[idx], results.mags[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.mag2s[idx] = np.average(
+                        [merged.mag2s[idx], results.mag2s[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.mag4s[idx] = np.average(
+                        [merged.mag4s[idx], results.mag4s[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.corrs[idx] = np.average(
+                        [merged.corrs[idx], results.corrs[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.acceptprobs[idx] = np.average(
+                        [merged.acceptprobs[idx], results.acceptprobs[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.nmeasures[idx] += results.nmeasures[T_idx]
+            # Else, create a new entry for the measures
+            else:
+                merged.Ts.append(
+                        results.Ts[T_idx])
+                merged.nmeasures.append(
+                        results.nmeasures[T_idx])
+                merged.measureintervals.append(
+                        results.measureintervals[T_idx])
+                merged.mags.append(
+                        results.mags[T_idx])
+                merged.mag2s.append(
+                        results.mag2s[T_idx])
+                merged.mag4s.append(
+                        results.mag4s[T_idx])
+                merged.corrs.append(
+                        results.corrs[T_idx])
+                merged.acceptprobs.append(
+                        results.acceptprobs[T_idx])
+    return merged
