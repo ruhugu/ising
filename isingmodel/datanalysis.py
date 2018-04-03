@@ -148,7 +148,8 @@ class Results(object):
 
         """
         Ts_arr = np.array(self.Ts)
-        return self.nspins/Ts_arr*variance(mean, momnt2)
+        return self.nspins/Ts_arr*self.samplevariance(
+                self.mags, self.mag2s, self.nmeasures)
 
     def binderratio(self):
         """Calculate the Binder ratio or fourth order cumulant.
@@ -254,7 +255,7 @@ class Results(object):
             
         """
         # Calculate the variance
-        var = cls.variance(mean, momnt2)
+        var = cls.samplevariance(mean, momnt2, nmeasures)
 
         # If the variance is zero, the error is directly zero.
         # If we use the formula in those cases a zero division is
