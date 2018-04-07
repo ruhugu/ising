@@ -5,14 +5,37 @@ from matplotlib import animation
 
 
 class Results(object):
-    def __init__(self, shape=None, fname=None):
+    # TODO: improve docs
+    def __init__(self, shape=None, fname=None, nsigma=1.):
+        """Blalbalba
+
+        Parameters
+        ----------
+            shape : int 2-tuple
+                Shape of the lattice whose measures are stored.
+
+            fname : string
+                Name of a text file to be imported.
+
+            nsigma : float
+                The error in a measured magnitudes will be nsigma
+                times the standard deviation.
+
+        """
+        # Store parameters
+        self.nsigma = nsigma
+
+        if shape != None:
+            self.shape = list(shape)
+        else:
+            self.shape = None
 
         # If the filename is provided, read the data from there
         if fname != None:
             self.readtxt(fname)
+
         else:
             # Store parameters
-            self.shape = list(shape)
             if self.shape == None:
                 raise ValueError("Lattice shape not given.")
 
@@ -83,6 +106,8 @@ class Results(object):
 
     # I/O 
     # ==============================
+    # TODO: add the data instead of overwriting it and check if the shape
+    # of the imported file is the same as the object attribute
     def readtxt(self, filename):
         """Read data from file.
 
@@ -137,16 +162,24 @@ class Results(object):
     # Physical magnitudes
     # ========================================
     def mag_err(self):
-        """Calculate the magnetization mean error.
+        """Calculate the magnetization error.
 
         """
-        return self.samplemean_error(
-                self.mags, self.mag2s, self.acceptprobs, self.nmeasures)
+        return self.nsigma*self.samplemean_error(
+                self.mags, self.mag2s, self.corrs, self.nmeasures)
+
+    def mag2_err(self):
+        """Calculate the error of the squared magnetization mean.
+
+        """
+        return self.nsigma*self.samplemean_error(
+                self.mag2s, self.mag4s, self.corrs, self.nmeasures)
 
     def magsuscept(self):
         """Calculate the magnetic susceptibility.
 
         """
+        # Store data to numpy arrays
         Ts_arr = np.array(self.Ts)
         return self.nspins/Ts_arr*self.samplevariance(
                 self.mags, self.mag2s, self.nmeasures)
@@ -242,9 +275,9 @@ class Results(object):
             momnt2 : float (scalar or array)
                 Sample second raw moment of the magnitude.
 
-            corr1 : float (scalar or array) 
-                Product of the magnitude in consecutive 
-                steps.
+            corr : float (scalar or array)
+                Mean value of the product of the magnitude in
+                consecutive measures.
 
             nmeasures: int (scalar or array)
                 Number of measures.
@@ -262,9 +295,10 @@ class Results(object):
         # done, so we have to treat the zero values separately.
 
         # Ensure the data is stored in arrays
+        mean_arr = mean*np.ones(1)
         var_arr = var*np.ones(1)
+        corr_arr = corr*np.ones(1)
         nmeasures_arr = nmeasures*np.ones(1)
-        acceptprob_arr = acceptprob*np.ones(1)
         
         # Create array for the results
         error = np.zeros(var_arr.size, dtype=float)
@@ -273,8 +307,8 @@ class Results(object):
         # the error in those cases
         nonzero_idxs = np.argwhere(var_arr != 0)
         corrtime = cls.corr_time(
-                var_arr[nonzero_idxs], nmeasures_arr[nonzero_idxs],
-                acceptprob_arr[nonzero_idxs])
+                mean_arr[nonzero_idxs], var_arr[nonzero_idxs],
+                corr_arr[nonzero_idxs])
         error[nonzero_idxs] = np.sqrt(
                 var_arr[nonzero_idxs]/nmeasures_arr[nonzero_idxs]*(
                 2.*corrtime + 1.))
