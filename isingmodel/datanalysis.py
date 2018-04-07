@@ -235,36 +235,44 @@ class Results(object):
 
 
     # TODO: improve docs
+    # TODO: ensure the units are right
     @staticmethod
-    def corr_time(var, nmeasures, acceptprob):
+    def corr_time(mean, var, corr):
         """Estimate the correlation time in a Markov chain (with rejection).
 
         Estimates the correlation time using the mean value
         of the product in consecutive steps and the variance
         (it is assumed that the autocorrelation decays
         exponentially).
-
+        
         Parameters
         ----------
-            var : float (scalar or array)
-                Variance.
+            mean : float (scalar or array)
+                Mean of the magnitued.
 
-            nmeasure : int (scalar or array)
-                Number of measures.
+            variance : float (scalar or array)
+                Variance of the magnitude.
 
-            acceptprob : float (scalar or array)
-                Proposal acceptance probability.
+            corr : float (scalar or array)
+                Mean value of the product of the magnitude in
+                consecutive measures.
 
         Returns
         -------
             corr_time : float (scalar or array)
+                Estimated correlation time.
             
         """
-        return nmeasures*var/(2.*acceptprob)
+        # Ensure the data is stored in arrays
+        var_arr = var*np.ones(1)
+        corr_arr = corr*np.ones(1)
+        # Calculate the normalized autocorrelation
+        corr_norm = (corr - np.power(mean, 2))/var
+        return corr_norm/(1. - corr_norm)
 
 
     @classmethod
-    def samplemean_error(cls, mean, momnt2, acceptprob, nmeasures):
+    def samplemean_error(cls, mean, momnt2, corr, nmeasures):
         """Calculate the sample mean error in rejection with repetition.
 
         Parameters
