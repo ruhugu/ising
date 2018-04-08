@@ -1,7 +1,14 @@
+import sys
+import os 
+
 import numpy as np
 import random 
 from matplotlib import pyplot as plt
 from matplotlib import animation
+
+sys.path.insert(0, os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '../networks')))
+import networks
 
 import cevolve 
 
@@ -10,13 +17,16 @@ class Ising(object):
     """Base Ising model class.
 
     """
-    def __init__(self, nspins, seed=None): 
+    def __init__(self, nspins, network=None, seed=None): 
         """Init method.
 
         Parameters
         ----------
             nspins : int
                 Number of spins.
+
+            network : Network object
+                Network object with the connection between spins.
 
             seed : int
                 Random number generator seed.
@@ -33,8 +43,14 @@ class Ising(object):
         # Set values randomly
         self.reset_random()
 
+        # If a network is not given create an empty one
+        if network == None:
+            self.network = networks.Network(self.nnodes)
+        else:
+            self.network = network
+
         # Create neighbour lists
-        self.neighlist, self.nneigh = self.neighbours()
+        self.update_neighbours()
 
         # Initialize the random number generators
         if seed == None:
@@ -60,26 +76,28 @@ class Ising(object):
         self.spins = value
 
 
-    def neighbours(self):
-        """Create neighbour list for the lattice.
+    def update_neighbours(self):
+        """Update neighbour's list using network attribute.
 
-        This is a placeholder.
-
-        Returns
-        -------
-            neighbourlist : int array
-                2D array with the neighbours of each cell.
-                neighbourlist[i,j] is the index in self.latt
-                of the j-th neighbour of the i-th cell (with
-                i also its index in self.latt).
-
-            n_neigh: int 
-                Number of neighbours of each cell.
-        
         """
-        neighbourlist = None
-        n_neigh = 0
-        return neighbourlist, n_neigh
+        # Calculate the number of neighbours of each spin
+        ns_neigh = self.network.degrees_out
+
+        # Calculate the maximum number of neighbours
+        n_neigh_max = np.amax(ns_neigh)
+
+        # TODO: store the list instead of the maximum
+        self.nneigh = n_neigh_max
+
+        # Initialize neighbour index and number lists
+        self.neighlist = np.full((self.nspins, n_neigh_max), -1, dtype="intc")
+
+        # Fill the list
+        for j_spin in range(self.nspins):
+            neighs = self.network.neighbours_out(j_spin)
+            self.neighlist[j_spin][0:neighs.size] = neighs
+
+        return 
 
 
     def reset_random(self):
@@ -89,7 +107,8 @@ class Ising(object):
         self.spins = np.random.choice([-1, 1], size=self.nspins).astype("intc")
         return 
 
-
+    # TODO: change c_evolve function to accept an arbitrary number
+    # of neighbours for each spin
     def evolve(self, nsteps, T):
         """Evolve the lattice in nsteps.
 
@@ -158,7 +177,7 @@ class Ising(object):
 
 
     def magnetization(self):
-        """Calculate the instantaneous mean magnetization.
+        """Calculate the magnetization.
 
         """
         return np.mean(self.spins)
@@ -268,7 +287,12 @@ class Ising2D(Ising):
         self.nrows = nrows
 
         self.nspins = self.ncols*self.nrows
-        Ising.__init__(self, self.nspins, seed=seed)
+
+        # Create 2D regular network
+        network = networks.Network2D(
+                nrows, ncols, pbc=True, weighted=False, directed=False)
+
+        Ising.__init__(self, self.nspins, network=network, seed=seed)
         
 
     @property
@@ -288,48 +312,48 @@ class Ising2D(Ising):
         """
         return [self.nrows, self.ncols]
 
-    def neighbours(self):
-        """Create neighbour list for the lattice.
-
-        Each spin has its the closest ones (up, down, left, right)
-        has neighbours, with periodic boundary condiions taked 
-        into account.
-
-        Returns
-        -------
-            neighlist : int array
-                2D array with the neighbours of each cell.
-                neighbourlist[i,j] is the index in self.latt
-                of the j-th neighbour of the i-th cell (with
-                i also its index in self.latt). The j values
-                correspond, in increasing order, to the
-                top, right, bottom and left neighbours.
-
-            nneigh: int 
-                Number of neighbours of each cell.
-        
-        """
-        # Number of neighbours per spin.
-        nneigh = 4 
-        neighlist = np.zeros((self.nspins, nneigh), dtype="intc")
-
-        for j_spin in range(self.nspins):
-            # Calculate the row and column of the spin.
-            [row, col] = np.unravel_index(j_spin, self.shape())
-
-            # Store the neighbours' indexes.
-
-            # Use the wrap parameter to implement the periodic boundaries.
-            neighlist[j_spin][0] = np.ravel_multi_index(
-                    [row-1, col], self.shape(), mode="wrap") # Top neighbour
-            neighlist[j_spin][1] = np.ravel_multi_index(
-                    [row, col+1], self.shape(), mode="wrap") # Right neighbour
-            neighlist[j_spin][2] = np.ravel_multi_index(
-                    [row+1, col], self.shape(), mode="wrap") # Bottom neighbour
-            neighlist[j_spin][3] = np.ravel_multi_index(
-                    [row, col-1], self.shape(), mode="wrap") # Left neighbour
-            
-        return neighlist, nneigh
+#    def neighbours(self):
+#        """Create neighbour list for the lattice.
+#
+#        Each spin has its the closest ones (up, down, left, right)
+#        has neighbours, with periodic boundary condiions taked 
+#        into account.
+#
+#        Returns
+#        -------
+#            neighlist : int array
+#                2D array with the neighbours of each cell.
+#                neighbourlist[i,j] is the index in self.latt
+#                of the j-th neighbour of the i-th cell (with
+#                i also its index in self.latt). The j values
+#                correspond, in increasing order, to the
+#                top, right, bottom and left neighbours.
+#
+#            nneigh: int 
+#                Number of neighbours of each cell.
+#        
+#        """
+#        # Number of neighbours per spin.
+#        nneigh = 4 
+#        neighlist = np.zeros((self.nspins, nneigh), dtype="intc")
+#
+#        for j_spin in range(self.nspins):
+#            # Calculate the row and column of the spin.
+#            [row, col] = np.unravel_index(j_spin, self.shape())
+#
+#            # Store the neighbours' indexes.
+#
+#            # Use the wrap parameter to implement the periodic boundaries.
+#            neighlist[j_spin][0] = np.ravel_multi_index(
+#                    [row-1, col], self.shape(), mode="wrap") # Top neighbour
+#            neighlist[j_spin][1] = np.ravel_multi_index(
+#                    [row, col+1], self.shape(), mode="wrap") # Right neighbour
+#            neighlist[j_spin][2] = np.ravel_multi_index(
+#                    [row+1, col], self.shape(), mode="wrap") # Bottom neighbour
+#            neighlist[j_spin][3] = np.ravel_multi_index(
+#                    [row, col-1], self.shape(), mode="wrap") # Left neighbour
+#            
+#        return neighlist, nneigh
 
 
     # Exact results
