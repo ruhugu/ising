@@ -44,10 +44,11 @@ class Results(object):
             self.mags = list()
             self.mag2s = list()
             self.mag4s = list()
-            self.corrs = list()
+            self.corrmags = list()
             self.hamilts = list()
             self.hamilt2s = list()
             self.hamilt4s = list()
+            self.corrhamilts = list()
             self.nmeasures = list()
             self.acceptprobs = list()
             self.measureintervals = list()
@@ -74,13 +75,15 @@ class Results(object):
 
         # Initialize variables
         mag_last = 0. # Magnetization in the last measure
+        hamilt_last = 0. # Hamiltonian in the last measure
         mag_sum = 0.
         mag2_sum = 0.
         mag4_sum = 0.
-        corr_sum = 0.
+        corrmag_sum = 0.
         hamilt_sum = 0.
         hamilt2_sum = 0.
         hamilt4_sum = 0.
+        corrhamilt_sum = 0.
         naccept = 0
 
         # Start measure loop
@@ -96,22 +99,25 @@ class Results(object):
             mag_sum += np.abs(mag)
             mag2_sum += mag2
             mag4_sum += mag2*mag2
-            corr_sum += mag*mag_last
+            corrmag_sum += mag*mag_last
             hamilt_sum += hamilt
             hamilt2_sum += hamilt2
             hamilt4_sum += hamilt2*hamilt2
+            corrhamilt_sum += hamilt*hamilt_last
 
             # Store last measure
             mag_last = mag
+            hamilt_last = hamilt
 
         # Store measures and calculate means
         self.mags.append(mag_sum/nmeasures)
         self.mag2s.append(mag2_sum/nmeasures)
         self.mag4s.append(mag2_sum/nmeasures)
-        self.corrs.append(corr_sum/(nmeasures - 1))
+        self.corrmags.append(corrmag_sum/(nmeasures - 1))
         self.hamilts.append(hamilt_sum/nmeasures)
         self.hamilt2s.append(hamilt2_sum/nmeasures)
-        self.hamilt4s.append(hamilt2_sum/nmeasures)
+        self.hamilt4s.append(hamilt4_sum/nmeasures)
+        self.corrhamilts.append(corrhamilt_sum/(nmeasures - 1))
         self.acceptprobs.append(
                 float(naccept)/(nmeasures*measureinterval*latt.nspins))
 
@@ -132,13 +138,14 @@ class Results(object):
         self.mags = filedata[1].tolist()
         self.mag2s = filedata[2].tolist()
         self.mag4s = filedata[3].tolist()
-        self.corrs = filedata[4].tolist()
+        self.corrmags = filedata[4].tolist()
         self.hamilts = filedata[5].tolist()
         self.hamilt2s = filedata[6].tolist()
         self.hamilt4s = filedata[7].tolist()
-        self.acceptprobs = filedata[8].tolist()
-        self.nmeasures = filedata[9].tolist()
-        self.measureintervals = filedata[10].tolist()
+        self.corrhamilts = filedata[8].tolist()
+        self.acceptprobs = filedata[9].tolist()
+        self.nmeasures = filedata[10].tolist()
+        self.measureintervals = filedata[11].tolist()
 
         # Read additional parameters from footer
         with open(filename, "r") as f:
@@ -166,6 +173,7 @@ class Results(object):
                 "Mean mag.\t Mag. 2nd moment\t Mag. 4nd moment\t "
                 "Mag. time corr.\t " 
                 "Mean hamilt.\t Hamilt. 2nd moment\t Hamilt. 4nd moment\t "
+                "Hamilt. time corr.\t " 
                 "Acceptance probability\t N measures\t Measure interval")
         footerstring = "Shape: {0},{1}".format(self.shape[0], self.shape[1])
 
@@ -173,9 +181,9 @@ class Results(object):
                 fname,
                 np.vstack((
                         self.Ts, self.mags, self.mag2s, self.mag4s,
-                        self.corrs, self.hamilts, self.hamilt2s, 
-                        self.hamilt4s, self.acceptprobs, self.nmeasures, 
-                        self.measureintervals)).T,
+                        self.corrmags, self.hamilts, self.hamilt2s, 
+                        self.hamilt4s, self.corrhamilts, self.acceptprobs,
+                        self.nmeasures, self.measureintervals)).T,
                 header=headerstring, footer=footerstring)
         return
 
@@ -398,6 +406,7 @@ def mergeresults(results_list):
             if T in merged.Ts:
                 idx = merged.Ts.index(T) 
 
+                merged.nmeasures[idx] += results.nmeasures[T_idx]
                 merged.mags[idx] = np.average(
                         [merged.mags[idx], results.mags[T_idx]],
                         weights=[merged.nmeasures[idx], 
@@ -410,15 +419,30 @@ def mergeresults(results_list):
                         [merged.mag4s[idx], results.mag4s[T_idx]],
                         weights=[merged.nmeasures[idx], 
                                 results.nmeasures[T_idx]])
-                merged.corrs[idx] = np.average(
-                        [merged.corrs[idx], results.corrs[T_idx]],
+                merged.corrmags[idx] = np.average(
+                        [merged.corrmags[idx], results.corrmags[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.hamilts[idx] = np.average(
+                        [merged.hamilts[idx], results.hamilts[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.hamilt2s[idx] = np.average(
+                        [merged.hamilt2s[idx], results.hamilt2s[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.hamilt4s[idx] = np.average(
+                        [merged.hamilt4s[idx], results.hamilt4s[T_idx]],
+                        weights=[merged.nmeasures[idx], 
+                                results.nmeasures[T_idx]])
+                merged.corrhamilts[idx] = np.average(
+                        [merged.corrhamilts[idx], results.corrhamilts[T_idx]],
                         weights=[merged.nmeasures[idx], 
                                 results.nmeasures[T_idx]])
                 merged.acceptprobs[idx] = np.average(
                         [merged.acceptprobs[idx], results.acceptprobs[T_idx]],
                         weights=[merged.nmeasures[idx], 
                                 results.nmeasures[T_idx]])
-                merged.nmeasures[idx] += results.nmeasures[T_idx]
             # Else, create a new entry for the measures
             else:
                 merged.Ts.append(
@@ -433,8 +457,16 @@ def mergeresults(results_list):
                         results.mag2s[T_idx])
                 merged.mag4s.append(
                         results.mag4s[T_idx])
-                merged.corrs.append(
-                        results.corrs[T_idx])
+                merged.corrmags.append(
+                        results.corrmags[T_idx])
+                merged.hamilts.append(
+                        results.hamilts[T_idx])
+                merged.hamilt2s.append(
+                        results.hamilt2s[T_idx])
+                merged.hamilt4s.append(
+                        results.hamilt4s[T_idx])
+                merged.corrhamilts.append(
+                        results.corrhamilts[T_idx])
                 merged.acceptprobs.append(
                         results.acceptprobs[T_idx])
     return merged
