@@ -77,18 +77,22 @@ class Ising(object):
 
 
     def update_neighbours(self):
-        """Update neighbour's list using network attribute.
+        """Update the lattice structure list using network attribute.
 
         """
         # Calculate the number of neighbours of each spin
         ns_neigh = self.network.degrees_out
-
         # Calculate the maximum number of neighbours
         n_neigh_max = np.amax(ns_neigh)
-
         # TODO: store the list instead of the maximum
         self.nneigh = n_neigh_max
 
+        # Store the pairs of neighbouring spins
+        # (this is useful for calculating the hamiltonian)
+        self.neighpairs = np.array(
+                self.network.adjlist(directed=False, weighted=False),
+                dtype="intc")
+        
         # Initialize neighbour index and number lists
         self.neighlist = np.full((self.nspins, n_neigh_max), -1, dtype="intc")
 
@@ -98,7 +102,6 @@ class Ising(object):
             self.neighlist[j_spin][0:neighs.size] = neighs
 
         return 
-
 
     def reset_random(self):
         """Set the value of the lattice spins randomly.
@@ -182,8 +185,23 @@ class Ising(object):
         """
         return np.mean(self.spins)
 
+    # TODO: check how slow is this function an use cython if required
+    def hamiltonian(self):
+        """Calculate the value of the hamiltonian.
 
-    # Graphical respresentation
+        All couplings are 1 and no external field is considered.
+
+        """
+#        hamilt = 0.
+#        for pair in self.neighpairs:
+#            hamilt += -self.spins[pair[0]]*self.spins[pair[1]]
+        # Call the C function
+        hamilt = cevolve.hamiltonian(self.spins, self.neighpairs)
+        
+        return hamilt
+
+
+    # Graphical representation
     # ========================================
 
     def plot(self, size=3):

@@ -45,8 +45,11 @@ class Results(object):
             self.mag2s = list()
             self.mag4s = list()
             self.corrs = list()
-            self.acceptprobs = list()
+            self.hamilts = list()
+            self.hamilt2s = list()
+            self.hamilt4s = list()
             self.nmeasures = list()
+            self.acceptprobs = list()
             self.measureintervals = list()
 
         # Calculate the numer of spins
@@ -75,6 +78,9 @@ class Results(object):
         mag2_sum = 0.
         mag4_sum = 0.
         corr_sum = 0.
+        hamilt_sum = 0.
+        hamilt2_sum = 0.
+        hamilt4_sum = 0.
         naccept = 0
 
         # Start measure loop
@@ -84,11 +90,16 @@ class Results(object):
 
             # Measure
             mag = latt.magnetization()
-            mag_sum += np.abs(mag)
             mag2 = mag*mag
+            hamilt = latt.hamiltonian()
+            hamilt2 = hamilt*hamilt
+            mag_sum += np.abs(mag)
             mag2_sum += mag2
             mag4_sum += mag2*mag2
             corr_sum += mag*mag_last
+            hamilt_sum += hamilt
+            hamilt2_sum += hamilt2
+            hamilt4_sum += hamilt2*hamilt2
 
             # Store last measure
             mag_last = mag
@@ -98,6 +109,9 @@ class Results(object):
         self.mag2s.append(mag2_sum/nmeasures)
         self.mag4s.append(mag2_sum/nmeasures)
         self.corrs.append(corr_sum/(nmeasures - 1))
+        self.hamilts.append(hamilt_sum/nmeasures)
+        self.hamilt2s.append(hamilt2_sum/nmeasures)
+        self.hamilt4s.append(hamilt2_sum/nmeasures)
         self.acceptprobs.append(
                 float(naccept)/(nmeasures*measureinterval*latt.nspins))
 
@@ -119,9 +133,12 @@ class Results(object):
         self.mag2s = filedata[2].tolist()
         self.mag4s = filedata[3].tolist()
         self.corrs = filedata[4].tolist()
-        self.acceptprobs = filedata[5].tolist()
-        self.nmeasures = filedata[6].tolist()
-        self.measureintervals = filedata[7].tolist()
+        self.hamilts = filedata[5].tolist()
+        self.hamilt2s = filedata[6].tolist()
+        self.hamilt4s = filedata[7].tolist()
+        self.acceptprobs = filedata[8].tolist()
+        self.nmeasures = filedata[9].tolist()
+        self.measureintervals = filedata[10].tolist()
 
         # Read additional parameters from footer
         with open(filename, "r") as f:
@@ -144,16 +161,20 @@ class Results(object):
         if fname == None:
             fname = "isingR{0}C{1}.dat".format(self.shape[0], self.shape[1])
 
-        headerstring = ("Temperature\t Mean mag.\t Mag. 2nd moment\t "
-                "Mag. 4nd moment\t Mag. time corr.\t Acceptance probability\t "
-                "N measures\t Measure interval")
+        headerstring = (
+                "Temperature\t "
+                "Mean mag.\t Mag. 2nd moment\t Mag. 4nd moment\t "
+                "Mag. time corr.\t " 
+                "Mean hamilt.\t Hamilt. 2nd moment\t Hamilt. 4nd moment\t "
+                "Acceptance probability\t N measures\t Measure interval")
         footerstring = "Shape: {0},{1}".format(self.shape[0], self.shape[1])
 
         np.savetxt(
                 fname,
                 np.vstack((
                         self.Ts, self.mags, self.mag2s, self.mag4s,
-                        self.corrs, self.acceptprobs, self.nmeasures, 
+                        self.corrs, self.hamilts, self.hamilt2s, 
+                        self.hamilt4s, self.acceptprobs, self.nmeasures, 
                         self.measureintervals)).T,
                 header=headerstring, footer=footerstring)
         return
@@ -184,6 +205,17 @@ class Results(object):
         return self.nspins/Ts_arr*self.samplevariance(
                 self.mags, self.mag2s, self.nmeasures)
 
+    def magsuscept_err(self):
+        """Calculate the magnetic susceptibility error.
+
+        """
+        # Store data to numpy arrays
+        Ts_arr = np.array(self.Ts)
+
+        return self.nspins/Ts_arr*np.sqrt(
+                np.power(self.mag2_err(), 2)
+                + 4.*np.power(self.mags*self.mag_err(), 2))
+                
     def binderratio(self):
         """Calculate the Binder ratio or fourth order cumulant.
 

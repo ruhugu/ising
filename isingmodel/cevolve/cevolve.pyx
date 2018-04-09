@@ -34,6 +34,7 @@ cdef extern from "c_evolve.h":
     int c_evolve_nofieldGlauber(
             int* spins_in, int* spins_out, int *neighlist, int nspins,
             int nneigh, double beta, long int nsteps)
+    double c_hamiltonian(int* spins, int* pairs, int npairs)
 
 # More of the same for the random generator
 cdef extern from "dranxor2/dranxor2C.h":
@@ -61,26 +62,45 @@ cdef extern from "dranxor2/dranxor2C.h":
 # specified type, automatic conversion will be attempted.
 # http://cython.readthedocs.io/en/latest/src/userguide/language_basics.html
 
+# ALTERNATIVE: MemoryViews
+# http://nealhughes.net/cython1/
+# http://docs.cython.org/en/latest/src/userguide/memoryviews.html
+
 def evolve_nofieldGlauber(
         cnp.ndarray[int, ndim=1, mode="c"] spins_in,
         cnp.ndarray[int, ndim=2, mode="c"] neighlist,
         double beta, int nsteps):
 
-        # Calculate array lengths 
-        nspins = spins_in.size
-        nneigh = neighlist[0].size
+    # Calculate array lengths 
+    nspins = spins_in.size
+    nneigh = neighlist[0].size
 
-        cdef cnp.ndarray[int, ndim=1, mode="c"] spins_out = \
-                np.zeros(nspins, dtype="intc")
+    cdef cnp.ndarray[int, ndim=1, mode="c"] spins_out = \
+            np.zeros(nspins, dtype="intc")
 
-        naccept = c_evolve_nofieldGlauber(
-                <int*> cnp.PyArray_DATA(spins_in),
-                <int*> cnp.PyArray_DATA(spins_out),
-                <int*> cnp.PyArray_DATA(neighlist.flatten()),
-                nspins, nneigh,
-                beta, nsteps)
+    naccept = c_evolve_nofieldGlauber(
+            <int*> cnp.PyArray_DATA(spins_in),
+            <int*> cnp.PyArray_DATA(spins_out),
+            <int*> cnp.PyArray_DATA(neighlist.flatten()),
+            nspins, nneigh,
+            beta, nsteps)
 
-        return spins_out, naccept
+    return spins_out, naccept
+
+
+def hamiltonian(
+        cnp.ndarray[int, ndim=1, mode="c"] spins,
+        cnp.ndarray[int, ndim=2, mode="c"] pairs):
+
+    # Calculate array length
+    npairs = pairs.shape[0]
+
+    hamilt = c_hamiltonian(
+            <int*> cnp.PyArray_DATA(spins),
+            <int*> cnp.PyArray_DATA(pairs.flatten()),
+            <int> npairs)
+
+    return hamilt
 
 
 def seed(int iseed): 

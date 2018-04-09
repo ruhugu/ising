@@ -66,8 +66,22 @@ int c_evolve_nofieldGlauber(
 }
 
 
+double c_hamiltonian(int* spins, int* pairs, int npairs)
+{
+    double hamilt = 0;
+    for (int j_pair=0; j_pair < npairs; j_pair++)
+    {
+        hamilt += - (
+                spins[pairs[index2D(j_pair, 0, 2)]]
+                *spins[pairs[index2D(j_pair, 1, 2)]]);
+    }
+
+    return hamilt;
+}
+
 // Given 2D indices, return the corresponding index in the flattened array
 int index2D(int row, int column, int rowlength)
 {
     return row*rowlength + column;
 }            
+

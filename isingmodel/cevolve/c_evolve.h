@@ -12,7 +12,7 @@ method is used.
 
 Parameters
 ----------
-    spins_in : int pointer
+    spins_in : int array pointer
         Initial state of the lattice. Must point to an array with 
         length nspins.
 
@@ -48,6 +48,29 @@ int c_evolve_nofieldGlauber(
         int* spins_in, int* spins_out, int *neigh_list, int nspins,
         int nneigh, double beta, long int nsteps);
 
+// TODO: check how C handles the pointers to arrays, the docs may 
+// be wrong
+
+// Evaluate the Hamiltonian of the system
+//
+// Parameters
+// ----------
+//     spins : int array pointer  
+//         Spins in the lattice.
+//
+//     pairs : int 2d array pointer
+//         2D array where pairs[i][j] is the j-th element (j=0,1) of
+//         the i-th pair.
+//
+//     nparis : int
+//         Number of pairs.
+//         
+//  Returns
+//  -------
+//      hamilt : double
+//         Value of the Hamiltonian.
+//
+double c_hamiltonian(int* spins, int* pairs, int npairs);
 
 // Given 2D indices, return the corresponding index in the flattened array
 int index2D(int row, int column, int rowlength);
