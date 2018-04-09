@@ -112,7 +112,7 @@ class Results(object):
         # Store measures and calculate means
         self.mags.append(mag_sum/nmeasures)
         self.mag2s.append(mag2_sum/nmeasures)
-        self.mag4s.append(mag2_sum/nmeasures)
+        self.mag4s.append(mag4_sum/nmeasures)
         self.corrmags.append(corrmag_sum/(nmeasures - 1))
         self.hamilts.append(hamilt_sum/nmeasures)
         self.hamilt2s.append(hamilt2_sum/nmeasures)
@@ -198,7 +198,7 @@ class Results(object):
         corrtime = corr_time(
                 self.mags, self.mag2s, self.corrmags, self.nmeasures)
         return self.nsigma*samplemean_error(
-                self.mags, self.mag2s, self.corrmags, self.nmeasures)
+                self.mags, self.mag2s, corrtime, self.nmeasures)
 
     def mag2_err(self):
         """Calculate the error of the squared magnetization mean.
@@ -209,7 +209,7 @@ class Results(object):
         corrtime = corr_time(
                 self.mags, self.mag2s, self.corrmags, self.nmeasures)
         return self.nsigma*samplemean_error(
-                self.mag2s, self.mag4s, self.corrmags, self.nmeasures)
+                self.mag2s, self.mag4s, corrtime, self.nmeasures)
 
     def hamilt_err(self):
         """Calculate the Hamiltonian error.
