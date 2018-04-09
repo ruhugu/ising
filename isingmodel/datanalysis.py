@@ -211,6 +211,27 @@ class Results(object):
         return self.nsigma*samplemean_error(
                 self.mag2s, self.mag4s, self.corrmags, self.nmeasures)
 
+    def hamilt_err(self):
+        """Calculate the Hamiltonian error.
+
+        """
+        # Calculate correlation time
+        corrtime = corr_time(
+                self.hamilts, self.hamilt2s, self.corrhamilts, self.nmeasures)
+        return self.nsigma*samplemean_error(
+                self.hamilts, self.hamilt2s, corrtime, self.nmeasures)
+
+    def hamilt2_err(self):
+        """Calculate the error of the squared Hamiltonian mean.
+
+        """
+        # Calculate correlation time. We are making the assumtion
+        # that the correlation time of hamilt2 is the same as hamilt's.
+        corrtime = corr_time(
+                self.hamilts, self.hamilt2s, self.corrhamilts, self.nmeasures)
+        return self.nsigma*samplemean_error(
+                self.hamilt2s, self.hamilt4s, corrtime, self.nmeasures)
+
     def magsuscept(self):
         """Calculate the magnetic susceptibility.
 
@@ -230,6 +251,28 @@ class Results(object):
         return self.nspins/Ts_arr*np.sqrt(
                 np.power(self.mag2_err(), 2)
                 + 4.*np.power(self.mags*self.mag_err(), 2))
+
+    def specificheat(self):
+        """Calculate the specific heat per spin of the lattice.
+
+        """
+        # Store data to numpy arrays
+        Ts_arr = np.array(self.Ts)
+
+        return 1./(self.nspins*np.power(Ts_arr, 2))*samplevariance(
+                self.hamilts, self.hamilt2s, self.nmeasures)
+
+    def specificheat_err(self):
+        """Calculate the specific heat per spin error.
+
+        """
+        # Store data to numpy arrays
+        Ts_arr = np.array(self.Ts)
+
+        return 1./(self.nspins*np.power(Ts_arr, 2))*np.sqrt(
+                np.power(self.hamilt2_err(), 2)
+                + 4.*np.power(self.hamilts*self.hamilt_err(), 2))
+
                 
     def binderratio(self):
         """Calculate the Binder ratio or fourth order cumulant.
