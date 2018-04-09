@@ -194,15 +194,22 @@ class Results(object):
         """Calculate the magnetization error.
 
         """
-        return self.nsigma*self.samplemean_error(
-                self.mags, self.mag2s, self.corrs, self.nmeasures)
+        # Calculate correlation time
+        corrtime = corr_time(
+                self.mags, self.mag2s, self.corrmags, self.nmeasures)
+        return self.nsigma*samplemean_error(
+                self.mags, self.mag2s, self.corrmags, self.nmeasures)
 
     def mag2_err(self):
         """Calculate the error of the squared magnetization mean.
 
         """
-        return self.nsigma*self.samplemean_error(
-                self.mag2s, self.mag4s, self.corrs, self.nmeasures)
+        # Calculate correlation time. We are making the assumtion
+        # that the correlation time of mag2 is the same as mag.
+        corrtime = corr_time(
+                self.mags, self.mag2s, self.corrmags, self.nmeasures)
+        return self.nsigma*samplemean_error(
+                self.mag2s, self.mag4s, self.corrmags, self.nmeasures)
 
     def magsuscept(self):
         """Calculate the magnetic susceptibility.
@@ -210,7 +217,7 @@ class Results(object):
         """
         # Store data to numpy arrays
         Ts_arr = np.array(self.Ts)
-        return self.nspins/Ts_arr*self.samplevariance(
+        return self.nspins/Ts_arr*samplevariance(
                 self.mags, self.mag2s, self.nmeasures)
 
     def magsuscept_err(self):
@@ -231,141 +238,155 @@ class Results(object):
         return (1. - self.mag4s/(3.*np.power(self.mag2s, 2)))
 
     
-    # Statistical functions
-    # ===================================
-    @staticmethod
-    def variance(mean, momnt2):
-        """Calculate the sample variance.
 
-        Parameters
-        ----------
-            mean : float (scalar or array)
-                Mean value. 
+# Statistical functions
+# ===================================
+def variance(mean, momnt2):
+    """Calculate the sample variance.
 
-            momnt2 : float (scalar or array)
-                Second raw moment (mean of the square).
+    Parameters
+    ----------
+        mean : float (scalar or array)
+            Mean value. 
 
-        Returns
-        -------
-            variance : float (scalar or array)
+        momnt2 : float (scalar or array)
+            Second raw moment (mean of the square).
 
-        """
-        momnt2_arr = np.array(momnt2)
-        return momnt2_arr - np.power(mean, 2)
+    Returns
+    -------
+        variance : float (scalar or array)
 
-    @classmethod
-    def samplevariance(cls, mean, momnt2, nmeasure):
-        """Calculate the sample variance.
+    """
+    momnt2_arr = np.array(momnt2)
+    return momnt2_arr - np.power(mean, 2)
 
-        Parameters
-        ----------
-            mean : float (scalar or array)
-                Mean value. 
+def samplevariance(mean, momnt2, nmeasure):
+    """Calculate the sample variance.
 
-            momnt2 : float (scalar or array)
-                Second raw moment (mean of the square).
+    Parameters
+    ----------
+        mean : float (scalar or array)
+            Mean value. 
 
-        Returns
-        -------
-            variance : float (scalar or array)
+        momnt2 : float (scalar or array)
+            Second raw moment (mean of the square).
 
-        """
-        nmeasure_arr = np.array(nmeasure)
-        return nmeasure_arr/(nmeasure_arr - 1)*cls.variance(mean, momnt2)
+    Returns
+    -------
+        variance : float (scalar or array)
+
+    """
+    nmeasure_arr = np.array(nmeasure)
+    return nmeasure_arr/(nmeasure_arr - 1)*variance(mean, momnt2)
 
 
-    # TODO: improve docs
-    # TODO: ensure the units are right
-    @staticmethod
-    def corr_time(mean, var, corr):
-        """Estimate the correlation time in a Markov chain (with rejection).
+# TODO: improve docs
+# TODO: ensure the units are right
+def corr_time(mean, momnt2, corr, nmeasures):
+    """Estimate the correlation time in a Markov chain (with rejection).
 
-        Estimates the correlation time using the mean value
-        of the product in consecutive steps and the variance
-        (it is assumed that the autocorrelation decays
-        exponentially).
+    Estimates the correlation time using the mean value
+    of the product in consecutive steps and the variance
+    (it is assumed that the autocorrelation decays
+    exponentially).
+    
+    Parameters
+    ----------
+        mean : float (scalar or array)
+            Mean of the magnitued.
+
+        momnt2 : float (scalar or array)
+            Second moment of the magnitude.
+
+        corr : float (scalar or array)
+            Mean value of the product of the magnitude in
+            consecutive measures.
+
+        nmeasures: int (scalar or array)
+            Number of measures.
+
+    Returns
+    -------
+        corr_time : float (scalar or array)
+            Estimated correlation time.
         
-        Parameters
-        ----------
-            mean : float (scalar or array)
-                Mean of the magnitued.
+    """
+    # Calculate the variance
+    var = samplevariance(mean, momnt2, nmeasures)
 
-            variance : float (scalar or array)
-                Variance of the magnitude.
+    # Ensure the data is stored in arrays
+    var_arr = var*np.ones(1)
+    corr_arr = corr*np.ones(1)
+    mean_arr = mean*np.ones(1)
 
-            corr : float (scalar or array)
-                Mean value of the product of the magnitude in
-                consecutive measures.
+    # Find the indexes where the variance is not zero
+    nonzero_idxs = np.argwhere(var_arr != 0)
 
-        Returns
-        -------
-            corr_time : float (scalar or array)
-                Estimated correlation time.
-            
-        """
-        # Ensure the data is stored in arrays
-        var_arr = var*np.ones(1)
-        corr_arr = corr*np.ones(1)
-        # Calculate the normalized autocorrelation
-        corr_norm = (corr - np.power(mean, 2))/var
-        return corr_norm/(1. - corr_norm)
+    # Initialize to -1
+    corr_norm = np.full(corr_arr.shape, -1)
 
 
-    @classmethod
-    def samplemean_error(cls, mean, momnt2, corr, nmeasures):
-        """Calculate the sample mean error in rejection with repetition.
+    # Calculate the normalized autocorrelation
+    corr_norm[nonzero_idxs] = (
+            (corr_arr[nonzero_idxs] - np.power(mean_arr[nonzero_idxs], 2))
+            /var_arr[nonzero_idxs])
+    return corr_norm/(1. - corr_norm)
 
-        Parameters
-        ----------
-            mean : float (scalar or array)
-                Sample mean of the calculated magnitued.
 
-            momnt2 : float (scalar or array)
-                Sample second raw moment of the magnitude.
+def samplemean_error(mean, momnt2, corrtime, nmeasures):
+    """Calculate the sample mean error in rejection with repetition.
 
-            corr : float (scalar or array)
-                Mean value of the product of the magnitude in
-                consecutive measures.
+    Parameters
+    ----------
+        mean : float (scalar or array)
+            Sample mean of the calculated magnitued.
 
-            nmeasures: int (scalar or array)
-                Number of measures.
+        momnt2 : float (scalar or array)
+            Sample second raw moment of the magnitude.
 
-        Returns
-        -------
-            error : float (scalar or array)
-            
-        """
-        # Calculate the variance
-        var = cls.samplevariance(mean, momnt2, nmeasures)
+        corrtime : float (scalar or array)
+            Correlation time of the magnitude.
 
-        # If the variance is zero, the error is directly zero.
-        # If we use the formula in those cases a zero division is
-        # done, so we have to treat the zero values separately.
+        nmeasures: int (scalar or array)
+            Number of measures.
 
-        # Ensure the data is stored in arrays
-        mean_arr = mean*np.ones(1)
-        var_arr = var*np.ones(1)
-        corr_arr = corr*np.ones(1)
-        nmeasures_arr = nmeasures*np.ones(1)
+    Returns
+    -------
+        error : float (scalar or array)
         
-        # Create array for the results
-        error = np.zeros(var_arr.size, dtype=float)
+    """
+    # Calculate the variance
+    var = samplevariance(mean, momnt2, nmeasures)
 
-        # Find the array indexes with nonzero variance and calculate
-        # the error in those cases
-        nonzero_idxs = np.argwhere(var_arr != 0)
-        corrtime = cls.corr_time(
-                mean_arr[nonzero_idxs], var_arr[nonzero_idxs],
-                corr_arr[nonzero_idxs])
-        error[nonzero_idxs] = np.sqrt(
-                var_arr[nonzero_idxs]/nmeasures_arr[nonzero_idxs]*(
-                2.*corrtime + 1.))
+    # If the variance is zero, the error is directly zero.
+    # If we use the formula in those cases a zero division is
+    # done, so we have to treat the zero values separately.
 
-        # If the array size is one, convert it to a scalar
-        if error.size == 1:
-            error = np.asscalar(error)
+    # Ensure the data is stored in arrays
+    mean_arr = mean*np.ones(1)
+    var_arr = var*np.ones(1)
+    corrtime_arr = corrtime*np.ones(1)
+    nmeasures_arr = nmeasures*np.ones(1)
+    
+    # Create array for the results
+    error = np.zeros(var_arr.size, dtype=float)
 
-        return error
+    # Find the array indexes with nonzero variance and calculate
+    # the error in those cases
+    nonzero_idxs = np.argwhere(var_arr != 0)
+    error[nonzero_idxs] = np.sqrt(
+            var_arr[nonzero_idxs]/nmeasures_arr[nonzero_idxs]*(
+            2.*corrtime_arr[nonzero_idxs] + 1.))
+
+    # If the array size is one, convert it to a scalar
+    if error.size == 1:
+        error = np.asscalar(error)
+
+    return error
+
+
+# Auxiliar functions
+# ========================================
 
 # TODO: make the function check and treat properly measures with 
 # the same T but different measure intervals
