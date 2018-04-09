@@ -61,19 +61,16 @@ class Ising(object):
      
 
     # Methods to access the spins array with a structure.
-    # These are placeholders to be replaced in the 
-    # specific implementations of the Ising model.
     @property
     def latt(self):
         """Structured spin array.
 
-        This is a placeholder.
-
         """
-        return self.spins
-    @latt.setter
-    def latt(self, value):
-        self.spins = value
+        return np.reshape(self.spins, self.shape())
+    # TODO: create a setter method that works with shape
+#    @latt.setter
+#    def latt(self, value):
+#        self.spins = value
 
 
     def update_neighbours(self):
@@ -313,12 +310,6 @@ class Ising2D(Ising):
         Ising.__init__(self, self.nspins, network=network, seed=seed)
         
 
-    @property
-    def latt(self):
-        """Structured spin array.
-
-        """
-        return np.reshape(self.spins, self.shape())
 #    @latt.setter
 #    def latt(self, value):
 #        np.reshape(self.spins, self.shape()) = value
