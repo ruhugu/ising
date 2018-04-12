@@ -78,7 +78,7 @@ class Ising(object):
 
         """
         # Calculate the number of neighbours of each spin
-        ns_neigh = self.network.degrees_out
+        ns_neigh = self.network.degree_out
         # Calculate the maximum number of neighbours
         n_neigh_max = np.amax(ns_neigh)
         # TODO: store the list instead of the maximum
@@ -304,8 +304,8 @@ class Ising2D(Ising):
         self.nspins = self.ncols*self.nrows
 
         # Create 2D regular network
-        network = networks.Network2D(
-                nrows, ncols, pbc=True, weighted=False, directed=False)
+        network = networks.Lattice(
+                (nrows, ncols), pbc=True, weighted=False, directed=False)
 
         Ising.__init__(self, self.nspins, network=network, seed=seed)
         
