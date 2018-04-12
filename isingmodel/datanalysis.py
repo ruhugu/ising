@@ -3,6 +3,8 @@ import random
 from matplotlib import pyplot as plt
 from matplotlib import animation
 
+from memoize import memoize
+
 
 class Results(object):
     # TODO: improve docs
@@ -96,6 +98,7 @@ class Results(object):
             mag2 = mag*mag
             hamilt = latt.hamiltonian()
             hamilt2 = hamilt*hamilt
+
             mag_sum += np.abs(mag)
             mag2_sum += mag2
             mag4_sum += mag2*mag2
@@ -122,6 +125,14 @@ class Results(object):
                 float(naccept)/(nmeasures*measureinterval*latt.nspins))
 
         return
+
+
+    @memoize
+    def L(self):
+        """Return characteristic size of the system.
+
+        """
+        return np.power(np.prod(self.shape), 1./self.shape.size)
 
 
     # I/O 
