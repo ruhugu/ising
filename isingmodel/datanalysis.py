@@ -3,7 +3,7 @@ import random
 from matplotlib import pyplot as plt
 from matplotlib import animation
 
-from memoize import memoize
+from memoize import memoized
 
 
 class Results(object):
@@ -127,12 +127,13 @@ class Results(object):
         return
 
 
-    @memoize
+    @property
+    @memoized
     def L(self):
         """Return characteristic size of the system.
 
         """
-        return np.power(np.prod(self.shape), 1./self.shape.size)
+        return np.power(np.prod(self.shape), 1./len(self.shape))
 
 
     # I/O 
