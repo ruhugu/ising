@@ -8,8 +8,8 @@ from matplotlib import animation
 
 sys.path.insert(0, os.path.abspath(
         os.path.join(os.path.dirname(__file__), '../networks')))
-import networks
 
+import networks
 import cevolve 
 
 
@@ -175,7 +175,8 @@ class Ising(object):
 
         return
 
-
+    # Measures
+    # ========================================
     def magnetization(self):
         """Calculate the magnetization.
 

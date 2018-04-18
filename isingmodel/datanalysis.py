@@ -331,7 +331,7 @@ def samplevariance(mean, momnt2, nmeasure):
 
     """
     nmeasure_arr = np.array(nmeasure)
-    return nmeasure_arr/(nmeasure_arr - 1)*variance(mean, momnt2)
+    return nmeasure_arr/(nmeasure_arr - 1.)*variance(mean, momnt2)
 
 
 # TODO: improve docs
@@ -377,8 +377,7 @@ def corr_time(mean, momnt2, corr, nmeasures):
     nonzero_idxs = np.argwhere(var_arr != 0)
 
     # Initialize to -1
-    corr_norm = np.full(corr_arr.shape, -1)
-
+    corr_norm = np.full(corr_arr.shape, -1., dtype=float)
 
     # Calculate the normalized autocorrelation
     corr_norm[nonzero_idxs] = (
@@ -444,6 +443,7 @@ def samplemean_error(mean, momnt2, corrtime, nmeasures):
 
 # TODO: make the function check and treat properly measures with 
 # the same T but different measure intervals
+# TODO: there must be a way of doing this cleanly
 def mergeresults(results_list):
     """Merge several results objects into one.
 
@@ -462,6 +462,7 @@ def mergeresults(results_list):
     -------
         merged: :py:class:`isingmodel.Results` object
             Results object with all the data from results list.
+
     """
     # Check that all the list elements have the same shape
     shape = results_list[0].shape
