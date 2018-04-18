@@ -382,7 +382,7 @@ class Ising2D(Ising):
     specificheat_exp = 0.
     
     @classmethod
-    def magnetization_exact(cls, T):
+    def mag_exact(cls, T):
         """Return the expected magnetization using the exact solution.
 
         Parameters
@@ -413,5 +413,4 @@ class Ising2D(Ising):
         # If there is only one temperature, convert the array to a scalar
         if T_arr.size == 1:
             mag = np.asscalar(mag)
-
         return mag
