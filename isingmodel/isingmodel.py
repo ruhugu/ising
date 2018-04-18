@@ -371,6 +371,15 @@ class Ising2D(Ising):
 
     # Critical temperature
     Tcrit = 2.26918531421
+
+    # Correlation length critical exponent
+    corrlen_exp = 1.
+    # Magnetization critical exponent
+    mag_exp = 1./8
+    # Magnetic critical exponent
+    magsuscept_exp = 7./4
+    # Specific susceptibility exponent
+    specificheat_exp = 0.
     
     @classmethod
     def magnetization_exact(cls, T):
