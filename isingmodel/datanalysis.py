@@ -1,5 +1,6 @@
 import numpy as np
 import random 
+from scipy import interpolate as spi
 from matplotlib import pyplot as plt
 from matplotlib import animation
 
@@ -292,7 +293,224 @@ class Results(object):
         """
         return (1. - self.mag4s/(3.*np.power(self.mag2s, 2)))
 
+
+    # Scaling
+    # ========================================
+    def T_scaled(self, Tcrit, corrlen_exp):
+        """Return scaled temperature.
+
+        Parameters
+        ----------
+            Tcrit : float
+                Critical temperature.
+
+            corrlen_exp : float
+                Correlation length critical scaling exponent.
+
+        """
+        return scale_T(self.Ts, self.L, Tcrit, corrlen_exp)
+
+    def mag_scaled(self, mag_exp, corrlen_exp):
+        """Return the scaled magnetization.
+   
+        Parameters
+        ----------
+            mag_exp : float
+                Magnetization critical scaling exponent.
+                
+            corrlen_exp : float
+                Correlation length critical scaling exponent.
+
+        """
+        return scale_magnitude(self.mags, self.L, mag_exp, corrlen_exp)
+
+    def mag_scaled_err(self, mag_exp, corrlen_exp):
+        """Return the scaled magnetization error.
+   
+        Parameters
+        ----------
+            mag_exp : float
+                Magnetization critical scaling exponent.
+                
+            corrlen_exp : float
+                Correlation length critical scaling exponent.
+
+        """
+        return scale_magnitude(self.mag_err(), self.L, mag_exp, corrlen_exp)
+
+    def magsuscept_scaled(self, magsuscept_exp, corrlen_exp):
+        """Return the scaled magnetic susceptibility.
+   
+        Parameters
+        ----------
+            magsuscept_exp : float
+                Magnetic susceptibility critical scaling exponent. 
+                
+            corrlen_exp : float
+                Correlation length critical scaling exponent.
+
+        """
+        return scale_magnitude(
+                self.magsuscept(), self.L, -magsuscept_exp, corrlen_exp)
+
+    def magsuscept_scaled_err(self, magsuscept_exp, corrlen_exp):
+        """Return the scaled magnetic susceptibility error.
+   
+        Parameters
+        ----------
+            magsuscept_exp : float
+                Magnetic susceptibility critical scaling exponent. 
+                
+            corrlen_exp : float
+                Correlation length exponent.
+
+        """
+        return scale_magnitude(
+                self.magsuscept_err(), self.L, -magsuscept_exp, corrlen_exp)
+
+
+    def specificheat_scaled(self, specheat_exp, corrlen_exp):
+        """Return the scaled magnetization.
+   
+        Parameters
+        ----------
+            specheat_exp : float
+                Magnetization critical scaling exponent.
+                
+            corrlen_exp : float
+                Correlation length critical scaling exponent.
+
+        """
+#        return scale_magnitude(
+#                self.specificheat(), self.L, -specheat_exp, corrlen_exp)
+        return self.specificheat()/np.log(self.L)
+
+    def specificheat_scaled_err(self, specheat_exp, corrlen_exp):
+        """Return the scaled magnetization error.
+   
+        Parameters
+        ----------
+            specheat_exp : float
+                Magnetization critical scaling exponent.
+                
+            corrlen_exp : float
+                Correlation length critical scaling exponent.
+
+        """
+        return scale_magnitude(
+                self.specificheat_err(), self.L, -specheat_exp, corrlen_exp)
+
+
+# Scaling related functions
+# ========================================
+def scale_T(Ts, L, Tcrit, corrlen_exp):
+    """Scale the given temperature array.
+
+    Parameters
+    ----------
+        Ts : list
+            Temperature list to be scaled.
+        
+        L : float
+            Lattice characteristic length.
+
+        Tcrit : float
+            Critical temperature.
+
+        corrlen_exp : float
+            Correlation length exponent on temperature.
+
+    """
+    Ts_arr = np.array(Ts)
+    return (1 - Ts_arr/Tcrit)*np.power(L, 1./corrlen_exp)
+
+def scale_magnitude(vals, L, exp, corrlen_exp):
+    """Return the scaled value of the given magnitude.
+
+    Parameters
+    ----------
+        vals: float list
+            Magnetization list to be scaled. 
+
+        L : float
+            Lattice characteristic length.
+
+        exp : float
+            Critical scaling exponent of the magnitude.
+            
+        corrlen_exp : float
+            Correlation length critical scaling exponent.
+
+    """
+    vals_arr = np.array(vals)
+    return vals_arr*np.power(L, exp/corrlen_exp)
+
+def collapse_metric(curves_x, curves_y):
+    """Find the collapse metric in the x axis of the given data.
+
+    Calculates the collapse metric of the given curves as described 
+    in (Sci Rep. 2016; 6: 38823). 
+
+    Parameters 
+    ----------
+        curves_x : numpy array list
+            List with the x array of each curve
+
+        curves_y : numpy array list 
+            List with the y array of each curve
     
+    Returns
+    -------
+        metricval : float
+            Value of the metric.
+
+    """
+#        # Check that there is the same nun0
+#        if not len(curves_x)==len(curves_y):
+#            raise ValueError('The lists must have the same size')
+    
+    # We calculate the span of the curves in the x axis, which will
+    # be used later to normalize the metric.
+    xmax = np.amax([np.amax(xs) for xs in curves_x])
+    xmin = np.amin([np.amin(xs) for xs in curves_x])
+    spanx = xmax - xmin
+
+    # Number of overlapping points and metric value initilization
+    metricval = 0.
+    N_ovl= 0
+
+    # Iteration over different reference curves
+    for j_ref, (refcurve_x, refcurve_y) in enumerate(zip(curves_x, curves_y)):
+
+        # Find the y limits of the reference curve
+        refymax = np.amax(refcurve_y)
+        refymin = np.amin(refcurve_y)
+        
+        # Linearly interpolate the refcurve to get the x of the 
+        # curve as a function of the y
+        refcurve_x_interp = spi.interp1d(
+                refcurve_y, refcurve_x, kind='linear')
+
+        for j_curve, (curve_x, curve_y) in enumerate(zip(curves_x, curves_y)):
+            # Ignore the ref curve
+            if j_curve == j_ref:
+                break
+
+            # Extract the points overlapping the reference curve
+            condition = np.logical_and(curve_y>=refymin, curve_y<=refymax)
+            ovl_x = np.extract(condition, curve_x)
+            ovl_y = np.extract(condition, curve_y)
+
+            # Save the number of overlapping points
+            N_ovl += ovl_x.size
+
+            # Distance between curve points and interpolated ref curve
+            metricval += np.linalg.norm(
+                    ovl_x - refcurve_x_interp(ovl_y), ord=1)
+
+    metricval = metricval/(N_ovl*spanx)
+    
+    return metricval
 
 # Statistical functions
 # ===================================
