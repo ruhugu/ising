@@ -479,8 +479,11 @@ def mergeresults(results_list):
         # Loop over the measured temperatures
         for T_idx, T in enumerate(results.Ts):
             # If T is already in merged, average the results
-            if T in merged.Ts:
-                idx = merged.Ts.index(T) 
+            # (set a precision to avoid problems)
+            if np.around(T, 10) in np.around(merged.Ts, 10):
+                print("repe: {0}".format(T))
+                idx = np.where(np.around(merged.Ts, 10) == np.around(T, 10))[0][0]
+                print(idx)
 
                 merged.nmeasures[idx] += results.nmeasures[T_idx]
                 merged.mags[idx] = np.average(
