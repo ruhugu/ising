@@ -481,9 +481,8 @@ def mergeresults(results_list):
             # If T is already in merged, average the results
             # (set a precision to avoid problems)
             if np.around(T, 10) in np.around(merged.Ts, 10):
-                print("repe: {0}".format(T))
+                print("Merging measures at T={0}.".format(T))
                 idx = np.where(np.around(merged.Ts, 10) == np.around(T, 10))[0][0]
-                print(idx)
 
                 merged.nmeasures[idx] += results.nmeasures[T_idx]
                 merged.mags[idx] = np.average(
@@ -524,6 +523,7 @@ def mergeresults(results_list):
                                 results.nmeasures[T_idx]])
             # Else, create a new entry for the measures
             else:
+                print("Adding new measure at T={0}.".format(T))
                 merged.Ts.append(
                         results.Ts[T_idx])
                 merged.nmeasures.append(
