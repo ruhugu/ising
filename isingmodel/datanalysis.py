@@ -381,9 +381,8 @@ class Results(object):
                 Correlation length critical scaling exponent.
 
         """
-#        return scale_magnitude(
-#                self.specificheat(), self.L, -specheat_exp, corrlen_exp)
-        return self.specificheat()/np.log(self.L)
+        return scale_magnitude(
+                self.specificheat(), self.L, -specheat_exp, corrlen_exp)
 
     def specificheat_scaled_err(self, specheat_exp, corrlen_exp):
         """Return the scaled magnetization error.
