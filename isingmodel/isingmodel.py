@@ -78,11 +78,10 @@ class Ising(object):
 
         """
         # Calculate the number of neighbours of each spin
-        ns_neigh = self.network.degree_out
-        # Calculate the maximum number of neighbours
-        n_neigh_max = np.amax(ns_neigh)
-        # TODO: store the list instead of the maximum
-        self.nneigh = n_neigh_max
+        ns_neigh = self.network.degree_out.astype("intc")
+        nneigh_max = np.amax(ns_neigh)
+
+        self.nneigh = ns_neigh
 
         # Store the pairs of neighbouring spins
         # (this is useful for calculating the hamiltonian)
@@ -90,8 +89,10 @@ class Ising(object):
                 self.network.adjlist(directed=False, weighted=False),
                 dtype="intc")
         
-        # Initialize neighbour index and number lists
-        self.neighlist = np.full((self.nspins, n_neigh_max), -1, dtype="intc")
+        # Initialize neighbour index and number lists.
+        # If a spin has less than nneigh_max neighbours, the first columns
+        # of its row are filled with its neighbours and the rest with -1's
+        self.neighlist = np.full((self.nspins, nneigh_max), -1, dtype="intc")
 
         # Fill the list
         for j_spin in range(self.nspins):
@@ -138,7 +139,7 @@ class Ising(object):
 
         # Call the time evolution C function
         self.spins, naccept = cevolve.evolve_nofieldGlauber(
-                self.spins, self.neighlist, beta, nsteps)
+                self.spins, self.neighlist, self.nneigh, beta, nsteps)
 
         return naccept
 

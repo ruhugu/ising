@@ -25,7 +25,7 @@ Parameters
         neighborlist[i,j] is the index of the j-th neighbor of
         the i-th spin.
 
-    nneigh : int
+    nneigh : int array
         Number of neighbors of each spin.
 
     nspins : int
@@ -46,7 +46,7 @@ Returns
 */
 int c_evolve_nofieldGlauber(
         int* spins_in, int* spins_out, int *neigh_list, int nspins,
-        int nneigh, double beta, long int nsteps);
+        int* nneigh, int nneigh_max, double beta, long int nsteps);
 
 // TODO: check how C handles the pointers to arrays, the docs may 
 // be wrong
@@ -74,3 +74,8 @@ double c_hamiltonian(int* spins, int* pairs, int npairs);
 
 // Given 2D indices, return the corresponding index in the flattened array
 int index2D(int row, int column, int rowlength);
+
+
+// Find the maximum element in an int array
+int max_element_int(int* array, int size);
+

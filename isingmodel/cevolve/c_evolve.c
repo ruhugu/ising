@@ -2,7 +2,7 @@
 
 int c_evolve_nofieldGlauber(
         int* spins_in, int* spins_out, int *neigh_list, int nspins,
-        int nneigh, double beta, long int nsteps)
+        int* nneigh, int nneigh_max, double beta, long int nsteps)
 {
     int j_MCstep;  // Counter for the MC step loop
     int j_step;  // Counter for the steps inside each MC step
@@ -10,19 +10,20 @@ int c_evolve_nofieldGlauber(
     int j_spin;
     int acceptprob_idx;
     long int naccept;
-    double acceptprob[5];
-
+    double* acceptprob;
 
     // Initialize the number of accepted proposals to zero
     naccept = 0;
 
-    // Precalculate the values of the Glauber acceptance 
-    // probability for the possible energy differences.
-    // In this case, those are (setting the coupling
-    // constant to 1): +8, +4, 0, -4, -8
-    for (int j_boltz = 0; j_boltz<5; j_boltz++)
+    // Allocate memory for the acceptance probability array
+    acceptprob = (double*) malloc((2*nneigh_max + 1)*sizeof(double));
+
+    // Precalculate the values of the Glauber acceptance probability
+    // for the possible energy differences. Notice that the coupling
+    // constant is set to 1).
+    for (int j_boltz = 0; j_boltz <= 2*nneigh_max; j_boltz++)
     {
-        double boltzfactor = exp(-beta*(4*j_boltz - 8));
+        double boltzfactor = exp(-beta*(2.*(j_boltz - nneigh_max)));
         acceptprob[j_boltz] = boltzfactor/(1. + boltzfactor);
     }
 
@@ -45,12 +46,12 @@ int c_evolve_nofieldGlauber(
             // Calculate the index corresponding to the 
             // acceptance probability for this change.
             acceptprob_idx = 0;
-            for (j_neigh = 0; j_neigh < nneigh; j_neigh++)
+            for (j_neigh = 0; j_neigh < nneigh[j_neigh]; j_neigh++)
             {
                 acceptprob_idx += spins_out[
-                        neigh_list[index2D(j_spin, j_neigh, nneigh)]];
+                        neigh_list[index2D(j_spin, j_neigh, nneigh_max)]];
             }
-            acceptprob_idx = (spins_out[j_spin]*acceptprob_idx + 4)/2;
+            acceptprob_idx = spins_out[j_spin]*acceptprob_idx + nneigh_max;
            
             // Accept the update with the corresponding
             // probability
@@ -61,6 +62,9 @@ int c_evolve_nofieldGlauber(
             }
         }
     }
+
+    // Free allocated memory
+    free(acceptprob);
             
     return naccept;
 }
@@ -84,4 +88,20 @@ int index2D(int row, int column, int rowlength)
 {
     return row*rowlength + column;
 }            
+
+// Find the maximum element in an int array
+int max_element_int(int* array, int size)
+{
+    int maximum = array[0];
+
+    for (int j = 1; j < size; j++)
+    {
+        if (array[j] > maximum)
+        {
+           maximum  = array[j];
+        }
+    }
+
+    return maximum;
+}
 
