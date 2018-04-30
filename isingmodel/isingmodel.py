@@ -122,8 +122,6 @@ class Ising(object):
         self.spins = np.random.choice([-1, 1], size=self.nspins).astype("intc")
         return 
 
-    # TODO: change c_evolve function to accept an arbitrary number
-    # of neighbours for each spin
     def evolve(self, nsteps, T):
         """Evolve the lattice in nsteps.
 
