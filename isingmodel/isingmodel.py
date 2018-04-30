@@ -45,7 +45,7 @@ class Ising(object):
 
         # If a network is not given create an empty one
         if network == None:
-            self.network = networks.Network(self.nnodes)
+            self.network = networks.Network(self.nspins)
         else:
             self.network = network
 
@@ -58,7 +58,11 @@ class Ising(object):
         self.seed = seed  # Store seed
         cevolve.seed(seed)  # dranxor number generator
         np.random.seed(seed)  # Python random number generator
-     
+
+
+    # Default attributes
+    _shape = [1,]
+
 
     # Methods to access the spins array with a structure.
     @property
@@ -71,6 +75,14 @@ class Ising(object):
 #    @latt.setter
 #    def latt(self, value):
 #        self.spins = value
+
+    def shape(self):
+        """Return lattice shape.
+
+        The default value for the base class is just 1 row (1D).
+
+        """
+        return self._shape
 
 
     def update_neighbours(self):
@@ -150,7 +162,7 @@ class Ising(object):
         """Thermalize the system slowly to the given temperature.
 
         Parameters
-        ----------
+       ----------
             T_final : float
                 Final temperature.
 
@@ -291,37 +303,53 @@ class Ising(object):
                     "number of spins in the lattice.")
 
         latt.spins = inconf
+
         return
 
 
-class Ising2D(Ising):
+class Regular(Ising):
+    """Regular Ising model lattice with periodic boundary conditions.
+
+    """
+    def __init__(self, shape, seed=None):
+        """ Init method.
+
+        Parameters
+        ----------
+            shape : int list
+                Lattice shape.
+
+            seed : int
+                Random number generator seed.
+
+        """
+        # Store parameters
+        self._shape = shape
+
+        self.nspins = np.prod(self.shape())
+
+        # Create the regular network
+        network = networks.Lattice(
+                self._shape, pbc=True, weighted=False, directed=False)
+
+        Ising.__init__(self, self.nspins, network=network, seed=seed)
+
+
+class Ising2D(Regular):
     """2D Ising model lattice with periodic boundary conditions.
 
     """
     def __init__(self, ncols, nrows, seed=None):
         # Store parameters
-        self.ncols = ncols
-        self.nrows = nrows
+        self._shape = [ncols, nrows]
 
-        self.nspins = self.ncols*self.nrows
-
-        # Create 2D regular network
-        network = networks.Lattice(
-                (nrows, ncols), pbc=True, weighted=False, directed=False)
-
-        Ising.__init__(self, self.nspins, network=network, seed=seed)
+        Regular.__init__(self, self._shape, seed=seed)
         
 
 #    @latt.setter
 #    def latt(self, value):
 #        np.reshape(self.spins, self.shape()) = value
 
-
-    def shape(self):
-        """Return lattice shape.
-
-        """
-        return [self.nrows, self.ncols]
 
 #    def neighbours(self):
 #        """Create neighbour list for the lattice.
