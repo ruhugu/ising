@@ -104,6 +104,8 @@ class Ising(object):
         # Initialize neighbour index and number lists.
         # If a spin has less than nneigh_max neighbours, the first columns
         # of its row are filled with its neighbours and the rest with -1's
+        # TODO: is there are spins with much more neighbours than the 
+        # rest, this way of storing the neighbour list mat be inneficient
         self.neighlist = np.full((self.nspins, nneigh_max), -1, dtype="intc")
 
         # Fill the list
