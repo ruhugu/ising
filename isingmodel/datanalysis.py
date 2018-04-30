@@ -29,9 +29,9 @@ class Results(object):
         self.nsigma = nsigma
 
         if shape != None:
-            self.shape = list(shape)
+            self._shape = tuple(shape)
         else:
-            self.shape = None
+            self._shape = None
 
         # If the filename is provided, read the data from there
         if fname != None:
@@ -39,7 +39,7 @@ class Results(object):
 
         else:
             # Store parameters
-            if self.shape == None:
+            if self._shape == None:
                 raise ValueError("Lattice shape not given.")
 
             # Initialize results lists
@@ -57,7 +57,13 @@ class Results(object):
             self.measureintervals = list()
 
         # Calculate the numer of spins
-        self.nspins = np.prod(self.shape)
+        self.nspins = np.prod(self.shape())
+
+    def shape(self):
+        """Return lattice shape.
+
+        """
+        return self._shape
 
     # TODO: complete docs
     # TODO: check if T has been already measured and average
@@ -67,7 +73,7 @@ class Results(object):
 
         """
         # Check if lattice shape is the expected one
-        if self.shape != latt.shape():
+        if self.shape() != latt.shape():
             raise ValueError(
                     "The lattice shape does not match the Results object one.")
             
@@ -134,7 +140,7 @@ class Results(object):
         """Return characteristic size of the system.
 
         """
-        return np.power(np.prod(self.shape), 1./len(self.shape))
+        return np.power(np.prod(self.shape()), 1./len(self.shape()))
 
 
     # I/O 
@@ -163,8 +169,18 @@ class Results(object):
         # Read additional parameters from footer
         with open(filename, "r") as f:
             lines = f.readlines()
-            self.shape = map(int, lines[-1].split()[2].split(","))
+            #self._shape = tuple(map(int, lines[-1].split()[2].split(",")))
+            footer = lines[-1]
+            # String list with the shape of the lattice
+            shape_str = footer[footer.find("(")+1:footer.find(")")].split(",")
 
+            # If the lattice is 1D, strip leaves an empty string in
+            # shape_str, for example "(10, )" -> ["10", ""].
+            # If that is the case, remove the last element.
+            if shape_str[-1] == "":
+                shape_str = shape_str[:-1]
+
+            self._shape = tuple(map(int, shape_str))
         return
 
     def savetxt(self, fname=None):
@@ -179,7 +195,7 @@ class Results(object):
 
         """
         if fname == None:
-            fname = "isingR{0}C{1}.dat".format(self.shape[0], self.shape[1])
+            fname = "ising{0}.dat".format(self.shape())
 
         headerstring = (
                 "Temperature\t "
@@ -188,7 +204,7 @@ class Results(object):
                 "Mean hamilt.\t Hamilt. 2nd moment\t Hamilt. 4nd moment\t "
                 "Hamilt. time corr.\t " 
                 "Acceptance probability\t N measures\t Measure interval")
-        footerstring = "Shape: {0},{1}".format(self.shape[0], self.shape[1])
+        footerstring = "Shape: {0}".format(self.shape())
 
         np.savetxt(
                 fname,
@@ -685,7 +701,7 @@ def mergeresults(results_list):
     # Check that all the list elements have the same shape
     shape = results_list[0].shape
     for results in results_list:
-        if results.shape != shape:
+        if results.shape() != shape:
             raise ValueError(
                     "All the elements in the list must have the same shape")
 

@@ -49,6 +49,10 @@ class Ising(object):
         else:
             self.network = network
 
+        # If the lattice has no shape attribute, create it
+        if not hasattr(self, '_shape'):
+            self._shape = tuple((self.nspins,))
+
         # Create neighbour lists
         self.update_neighbours()
 
@@ -58,10 +62,6 @@ class Ising(object):
         self.seed = seed  # Store seed
         cevolve.seed(seed)  # dranxor number generator
         np.random.seed(seed)  # Python random number generator
-
-
-    # Default attributes
-    _shape = [1,]
 
 
     # Methods to access the spins array with a structure.
@@ -326,7 +326,7 @@ class Regular(Ising):
 
         """
         # Store parameters
-        self._shape = shape
+        self._shape = tuple(shape)
 
         self.nspins = np.prod(self.shape())
 
@@ -343,7 +343,7 @@ class Ising2D(Regular):
     """
     def __init__(self, ncols, nrows, seed=None):
         # Store parameters
-        self._shape = [ncols, nrows]
+        self._shape = tuple((ncols, nrows))
 
         Regular.__init__(self, self._shape, seed=seed)
         
