@@ -306,6 +306,48 @@ class Ising(object):
 
         return
 
+class IsingCoupling(Ising):
+    """Ising model class with arbitrary couplings.
+
+    The coupling are taken from the adjacency matrix of the network
+    attribute. The adjacency matrix array must be of type "float64".
+
+    """
+    def evolve(self, nsteps, T):
+        """Evolve the lattice in nsteps.
+
+        Accept arbitrary couplings.
+
+           Parameters
+           ----------
+               nsteps : int
+                   Number of Monte Carlo steps.
+
+               T : float
+                   Temperature of the system in units of the inverse
+                   of the Boltzmann's constant times the coupling
+                   constant times the particle's spin squared.
+
+            Returns
+            -------
+                naccept : int
+                    Number of accepted proposals.
+
+        """
+        # Raise an error if the given temperature is not valid
+        if T <= 0:
+            raise ValueError("The temperature must be greater than zero.")
+
+        # Calculate the value of the thermodynamic beta
+        # for the given temperature
+        beta = 1./T
+
+        # Call the time evolution C function
+        self.spins, naccept = cevolve.evolve_nofieldCouplGlauber(
+                self.spins, self.neighlist, self.network.adjmatrix, self.nneigh, 
+                beta, nsteps)
+
+        return naccept
 
 class Regular(Ising):
     """Regular Ising model lattice with periodic boundary conditions.

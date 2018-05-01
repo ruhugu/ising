@@ -34,6 +34,10 @@ cdef extern from "c_evolve.h":
     int c_evolve_nofieldGlauber(
             int* spins_in, int* spins_out, int *neighlist, int nspins,
             int* nneigh, int nneigh_max, double beta, long int nsteps)
+    int c_evolve_nofieldCouplGlauber(
+            int* spins_in, int* spins_out, int *neigh_list, double* coupls,
+            int nspins, int* nneigh, int nneigh_max, double beta,
+            long int nsteps)
     double c_hamiltonian(int* spins, int* pairs, int npairs)
 
 # More of the same for the random generator
@@ -86,6 +90,35 @@ def evolve_nofieldGlauber(
             <int*> cnp.PyArray_DATA(spins_in),
             <int*> cnp.PyArray_DATA(spins_out),
             <int*> cnp.PyArray_DATA(neighlist.flatten()),
+            nspins,
+            <int*> cnp.PyArray_DATA(nneigh), nneigh_max, 
+            beta, nsteps)
+
+    return spins_out, naccept
+
+
+def evolve_nofieldCouplGlauber(
+        cnp.ndarray[int, ndim=1, mode="c"] spins_in,
+        cnp.ndarray[int, ndim=2, mode="c"] neighlist,
+        cnp.ndarray[double, ndim=2, mode="c"] coupls,
+        cnp.ndarray[int, ndim=1, mode="c"] nneigh,
+        double beta, int nsteps):
+
+    nspins = spins_in.size
+
+    # The C function mush know the number of columns in the array,
+    # which coincides with the max number of neighbours
+    nneigh_max = (neighlist.shape)[1]
+
+    # Create array where the evolved configuration will be stored
+    cdef cnp.ndarray[int, ndim=1, mode="c"] spins_out = \
+            np.zeros(nspins, dtype="intc")
+
+    naccept = c_evolve_nofieldCouplGlauber(
+            <int*> cnp.PyArray_DATA(spins_in),
+            <int*> cnp.PyArray_DATA(spins_out),
+            <int*> cnp.PyArray_DATA(neighlist.flatten()),
+            <double*> cnp.PyArray_DATA(coupls.flatten()),
             nspins,
             <int*> cnp.PyArray_DATA(nneigh), nneigh_max, 
             beta, nsteps)
