@@ -215,12 +215,14 @@ class Ising(object):
     # Graphical representation
     # ========================================
 
-    def plot(self, size=3):
+    def plot(self, figsize=3):
         """Plot the system configuration. 
+
+        This method only works if the lattice is bidimensional.
 
         """
 
-        fig, ax = plt.subplots(figsize=(size,size))
+        fig, ax = plt.subplots(figsize=(figsize, figsize))
         im = ax.imshow(self.latt, cmap=self.cmap, vmin=-1, vmax=+1,
                 interpolation=None)
         return fig
@@ -228,6 +230,8 @@ class Ising(object):
 
     def animate(self, T, nframes=1000, steps_per_frame=1, frame_interval=300):
         """Animate the evolution of the lattice. 
+
+        This method only works if the lattice is bidimensional.
 
         Parameters
         ----------
