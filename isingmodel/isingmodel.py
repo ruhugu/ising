@@ -8,8 +8,8 @@ from matplotlib import animation
 
 sys.path.insert(0, os.path.abspath(
         os.path.join(os.path.dirname(__file__), '../networks')))
-
 import networks
+
 import cevolve 
 
 
@@ -17,7 +17,7 @@ class Ising(object):
     """Base Ising model class.
 
     """
-    def __init__(self, nspins, network=None, seed=None): 
+    def __init__(self, nspins, network=None, shape=None, seed=None): 
         """Init method.
 
         Parameters
@@ -50,9 +50,15 @@ class Ising(object):
             self.network = network
 
         # If the lattice has no shape attribute, create it
-        if not hasattr(self, '_shape'):
+        if shape == None:
             self._shape = tuple((self.nspins,))
-
+        else: 
+            if np.prod(shape) == self.nspins:
+                self._shape = tuple(shape)
+            else:
+                raise ValueError(
+                        "The given shape does not match the number of spins.")
+            
         # Create neighbour lists
         self.update_neighbours()
 
@@ -78,8 +84,6 @@ class Ising(object):
 
     def shape(self):
         """Return lattice shape.
-
-        The default value for the base class is just 1 row (1D).
 
         """
         return self._shape
@@ -369,27 +373,24 @@ class Regular(Ising):
                 Random number generator seed.
 
         """
-        # Store parameters
-        self._shape = tuple(shape)
-
-        self.nspins = np.prod(self.shape())
+        self.nspins = np.prod(shape)
 
         # Create the regular network
         network = networks.Lattice(
-                self._shape, pbc=True, weighted=False, directed=False)
+                shape, pbc=True, weighted=False, directed=False)
 
-        Ising.__init__(self, self.nspins, network=network, seed=seed)
+        Ising.__init__(self, self.nspins, network=network, shape=shape, seed=seed)
 
 
 class Ising2D(Regular):
     """2D Ising model lattice with periodic boundary conditions.
 
     """
-    def __init__(self, ncols, nrows, seed=None):
+    def __init__(self, nrows, ncols, seed=None):
         # Store parameters
-        self._shape = tuple((ncols, nrows))
+        shape = tuple((nrows, ncols))
 
-        Regular.__init__(self, self._shape, seed=seed)
+        Regular.__init__(self, shape, seed=seed)
         
 
 #    @latt.setter
