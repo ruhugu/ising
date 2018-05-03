@@ -227,7 +227,7 @@ class Ising(object):
         """
 
         fig, ax = plt.subplots(figsize=(figsize, figsize))
-        im = ax.imshow(self.latt, cmap=self.cmap, vmin=-1, vmax=+1,
+        im = ax.imshow(self.latt, cmap="Greys", vmin=-1, vmax=+1,
                 interpolation=None)
         return fig
 
