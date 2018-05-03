@@ -46,7 +46,7 @@ int c_evolve_nofieldGlauber(
             // Calculate the index corresponding to the 
             // acceptance probability for this change.
             acceptprob_idx = 0;
-            for (j_neigh = 0; j_neigh < nneigh[j_neigh]; j_neigh++)
+            for (j_neigh = 0; j_neigh < nneigh[j_spin]; j_neigh++)
             {
                 acceptprob_idx += spins_out[
                         neigh_list[index2D(j_spin, j_neigh, nneigh_max)]];
@@ -105,7 +105,7 @@ int c_evolve_nofieldCouplGlauber(
 
             // Calculate the the acceptance probability for this change.
             aux_prob = 0;
-            for (j_neigh = 0; j_neigh < nneigh[j_neigh]; j_neigh++)
+            for (j_neigh = 0; j_neigh < nneigh[j_spin]; j_neigh++)
             {
                 // Find the index in "spins_out" of the neighbour
                 neigh_idx = neigh_list[index2D(j_spin, j_neigh, nneigh_max)];
