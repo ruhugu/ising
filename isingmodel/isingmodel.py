@@ -183,6 +183,10 @@ class Ising(object):
                 Difference between consecutive temperature steps.
 
         """
+        # Change temperature step sign if neccesary
+        if T_final < T_ini:
+            T_step *= -1 
+
         # Create the temperature vector
         Ts = np.arange(T_ini, T_final, T_step)
 
